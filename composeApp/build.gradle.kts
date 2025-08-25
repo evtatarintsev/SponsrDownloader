@@ -28,6 +28,10 @@ kotlin {
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation("org.jsoup:jsoup:1.16.1")
+            implementation("io.ktor:ktor-client-core:2.3.4")
+            implementation("io.ktor:ktor-client-cio:2.3.4")
+            implementation("io.ktor:ktor-client-logging:2.3.4")
         }
     }
 }
