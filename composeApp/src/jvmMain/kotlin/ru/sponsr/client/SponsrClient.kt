@@ -9,7 +9,10 @@ import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class SponsrClient {
+@JvmInline
+value class SponsrSession(val value: String)
+
+class SponsrClient(private val sess: SponsrSession) {
     private val baseUrl = "https://sponsr.ru"
     
     private val client = HttpClient(CIO) {

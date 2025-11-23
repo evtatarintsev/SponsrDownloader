@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import ru.sponsr.client.SponsrProject
 
 @Composable
-fun PostList(
+fun ProjectList(
     projects: List<SponsrProject>,
     onProjectClick: (SponsrProject) -> Unit = {}
 ) {
