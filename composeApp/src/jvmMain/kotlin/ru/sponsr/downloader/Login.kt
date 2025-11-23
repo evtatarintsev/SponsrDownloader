@@ -8,12 +8,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 
+/**
+ * Экран авторизации на [sponsr.ru](https://sponsr.ru).
+ *
+ * В результате авторизации необходимо получить значение SESS cookie.
+ */
 @Composable
-fun Login(
-    onLoginClick: (String, String) -> Unit = { _, _ -> }
-) {
-    var login by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+fun Login(onLoginClick: (String) -> Unit) {
+    var sess by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -29,33 +31,25 @@ fun Login(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "Welcome Back",
+                    text = "Авторизация на sponsr.ru",
                     style = MaterialTheme.typography.h5
                 )
-                
+
                 OutlinedTextField(
-                    value = login,
-                    onValueChange = { login = it },
-                    label = { Text("Login") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
+                    value = sess,
+                    onValueChange = { sess = it },
+                    label = { Text("Значение cookie SESS") },
                     visualTransformation = PasswordVisualTransformation(),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                
+
                 Button(
-                    onClick = { onLoginClick(login, password) },
+                    onClick = { onLoginClick(sess) },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = login.isNotBlank() && password.isNotBlank()
+                    enabled = sess.isNotBlank()
                 ) {
-                    Text("Login")
+                    Text("Войти")
                 }
             }
         }

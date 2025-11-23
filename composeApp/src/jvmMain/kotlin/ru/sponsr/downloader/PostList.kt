@@ -4,77 +4,66 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-
-data class Post(
-    val id: Int,
-    val title: String,
-    val onDownloadClick: () -> Unit = {}
-)
+import ru.sponsr.client.SponsrProject
 
 @Composable
-fun PostList() {
-    val posts = listOf(
-        Post(1, "Великая Китайская стена: История строительства и значение"),
-        Post(2, "Древний Египет: Тайны пирамид и фараонов"),
-        Post(3, "Римская империя: Взлет и падение вечного города"),
-        Post(4, "Эпоха Великих географических открытий"),
-        Post(5, "Французская революция: Причины и последствия"),
-        Post(6, "Вторая мировая война: Ключевые события и итоги"),
-        Post(7, "Древняя Греция: Колыбель западной цивилизации"),
-        Post(8, "Средневековые рыцари и кодекс чести"),
-        Post(9, "Эпоха Возрождения: Расцвет искусства и науки"),
-        Post(10, "Холодная война: Противостояние сверхдержав")
-    )
+fun PostList(
+    projects: List<SponsrProject>,
+    onProjectClick: (SponsrProject) -> Unit = {}
+) {
+    if (projects.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("No projects found")
+        }
+        return
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        contentPadding = PaddingValues(16.dp)
     ) {
-        items(posts) { post ->
-            PostItem(post = post)
+        items(projects) { project ->
+            ProjectItem(project = project, onClick = { onProjectClick(project) })
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
-private fun PostItem(post: Post) {
+private fun ProjectItem(
+    project: SponsrProject,
+    onClick: () -> Unit
+) {
     Card(
-        elevation = 2.dp,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        elevation = 4.dp,
+        onClick = onClick
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(16.dp)
         ) {
             Text(
-                text = post.title,
-                modifier = Modifier.weight(1f),
-                fontWeight = FontWeight.Medium
+                text = project.title,
+                style = MaterialTheme.typography.h6,
+                fontWeight = FontWeight.Bold
             )
-            
-            Button(
-                onClick = post.onDownloadClick,
-                colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.primary)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Download,
-                    contentDescription = "Скачать",
-                    modifier = Modifier.size(ButtonDefaults.IconSize)
-                )
-                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                Text("Скачать")
-            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = project.url,
+                style = MaterialTheme.typography.caption,
+                color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+            )
         }
     }
 }
