@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
  * В результате авторизации необходимо получить значение SESS cookie.
  */
 @Composable
-fun Login(onLoginClick: (String) -> Unit) {
+fun Login(onLoggedIn: (String) -> Unit) {
     var sess by remember { mutableStateOf("") }
 
     Box(
@@ -45,7 +45,7 @@ fun Login(onLoginClick: (String) -> Unit) {
                 )
 
                 Button(
-                    onClick = { onLoginClick(sess) },
+                    onClick = { onLoggedIn(sess) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = sess.isNotBlank()
                 ) {

@@ -1,15 +1,27 @@
 package ru.sponsr.downloader
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import kotlinx.coroutines.launch
-import ru.sponsr.client.SponsrClient
-import ru.sponsr.client.SponsrException
+import ru.sponsr.client.SponsrProject
+import ru.sponsr.client.SponsrSession
+import kotlin.io.path.Path
 
 fun main() = application {
     Window(
@@ -17,53 +29,52 @@ fun main() = application {
         title = "SponsrDownloader",
     ) {
         var state by remember { mutableStateOf<State>(State.SavedSessionCheck()) }
-        var error by remember { mutableStateOf<String?>(null) }
-        var projects by remember { mutableStateOf(emptyList<ru.sponsr.client.SponsrProject>()) }
-        var showLogin by remember { mutableStateOf(false) }
+        var projects by remember { mutableStateOf(emptyList<SponsrProject>()) }
         val scope = rememberCoroutineScope()
-
-        // Load projects when the app starts
+        val snackbarHostState = remember { SnackbarHostState() }
+        val snackbarScope = rememberCoroutineScope()
 
         MaterialTheme {
-            Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                snackbarHost = { SnackbarHost(snackbarHostState) }
+            ) {
                 when (state) {
                     is State.SavedSessionCheck -> {
-                        // Show loading indicator
+                        val sessFile = Path(".sess").toFile()
+
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator()
                         }
-//                        LaunchedEffect(Unit) {
-//                            loadProjects(
-//                                client,
-//                                onLoading = { isLoading = it },
-//                                onError = { error = it },
-//                                onSuccess = { projects = it })
-//                        }
+                        LaunchedEffect(Unit) {
+                            if (sessFile.exists()) {
+                                SponsrSession(sessFile.readText())
+                                snackbarScope.launch {
+                                    snackbarHostState.show("Проверка сохраненной сессии...")
+                                }
+                            } else {
+                                snackbarScope.launch {
+                                    snackbarHostState.show("Сохраненной сессии не найдено. Авторизуйтесь.")
+                                }
+                                state = State.Auth()
+                            }
 
+                        }
                     }
 
                     is State.Auth -> {
-//                        Login(
-//                            onLoginClick = { sess ->
-//                                scope.launch {
-//                                    error = null
-//                                    isLoading = true
-//                                    loadProjects(
-//                                        client,
-//                                        onLoading = { isLoading = it },
-//                                        onError = { error = it },
-//                                        onSuccess = { projects = it }
-//                                    )
-//                                }
-//                            }
-//                        )
+                        Login(
+                            onLoggedIn = { sess ->
+                                scope.launch {
+                                    snackbarHostState.show("Получено значение SESS. Идет проверка...")
+                                }
+                            }
+                        )
                     }
 
                     is State.ProjectSelecting -> {
                         ProjectList(
                             projects = projects,
                             onProjectClick = { project ->
-                                // Handle project click (e.g., navigate to project details)
                                 println("Project clicked: ${project.title}")
                             }
                         )
@@ -89,3 +100,11 @@ fun main() = application {
         }
     }
 }
+
+
+suspend fun SnackbarHostState.show(message: String) = showSnackbar(
+    message,
+    null,
+    true,
+    SnackbarDuration.Short
+)
