@@ -1,60 +1,74 @@
 package ru.sponsr.client
 
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.DefaultRequest
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.cookies.ConstantCookiesStorage
+import io.ktor.client.plugins.cookies.HttpCookies
+import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.Cookie
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @JvmInline
 value class SponsrSession(val value: String)
 
-class SponsrClient(private val sess: SponsrSession) {
-    private val baseUrl = "https://sponsr.ru"
-    
+class SponsrClient(sess: SponsrSession) {
     private val client = HttpClient(CIO) {
+        install(DefaultRequest) {
+            url("https://sponsr.ru")
+        }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 30_000
+            connectTimeoutMillis = 10_000
+            socketTimeoutMillis = 30_000
+        }
         install(HttpTimeout) {
             requestTimeoutMillis = 30_000
         }
-        expectSuccess = false // We'll handle status codes manually
+        install(HttpCookies) {
+            storage = ConstantCookiesStorage(
+                Cookie(
+                    name = "SESS",
+                    value = sess.value,
+                    domain = ".sponsr.ru",
+                    path = "/",
+                    secure = true,
+                    httpOnly = true
+                )
+            )
+        }
+        expectSuccess = false
     }
 
-    /**
-     * Fetches the list of subscribed projects from Sponsr
-     * @return List of subscribed projects
-     * @throws SponsrAuthException if authentication is required (HTTP 401 or 403)
-     * @throws SponsrException for other HTTP errors
-     */
-    suspend fun projects(): List<SponsrProject> = withContext(Dispatchers.IO) {
-        val url = "$baseUrl/memberships/subscribe/"
-        
+
+    suspend fun projects(): SponsrResponse<List<SponsrProject>> = withContext(Dispatchers.IO) {
         val response = try {
-            client.get(url) {
-                timeout {
-                    requestTimeoutMillis = 30_000
-                }
-            }
+            client.get("/memberships/subscribe/")
         } catch (e: Exception) {
-            throw SponsrException("Failed to fetch projects: ${e.message}", e)
+            return@withContext SponsrResponse.Unexpected("Failed to fetch projects: ${e.message}")
         }
 
         when (response.status) {
             HttpStatusCode.OK -> {
+                println("Status ${response.status}")
                 val html = response.bodyAsText()
+                println("HTML: $html")
                 val subscribePage = SubscribePage(html)
-                subscribePage.projects()
+                SponsrResponse.Success(subscribePage.projects())
             }
-            HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> {
-                throw SponsrException("Authentication required. Please log in first.")
-            }
-            else -> {
-                throw SponsrException("Failed to fetch projects: ${response.status}")
-            }
+
+            HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden -> SponsrResponse.Unauthorized()
+            else -> SponsrResponse.Unexpected("Failed to fetch projects: ${response.status}")
         }
     }
 }
 
-class SponsrException(message: String, cause: Throwable? = null) : Exception(message, cause)
+sealed class SponsrResponse<T> {
+    data class Success<T>(val data: T) : SponsrResponse<T>()
+    class Unauthorized<T> : SponsrResponse<T>()
+    data class Unexpected<T>(val message: String) : SponsrResponse<T>()
+}

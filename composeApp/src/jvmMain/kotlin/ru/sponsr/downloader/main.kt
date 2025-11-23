@@ -5,9 +5,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,7 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import kotlinx.coroutines.launch
-import ru.sponsr.client.SponsrProject
+import ru.sponsr.client.SponsrClient
+import ru.sponsr.client.SponsrResponse
 import ru.sponsr.client.SponsrSession
 import kotlin.io.path.Path
 
@@ -29,8 +30,7 @@ fun main() = application {
         title = "SponsrDownloader",
     ) {
         var state by remember { mutableStateOf<State>(State.SavedSessionCheck()) }
-        var projects by remember { mutableStateOf(emptyList<SponsrProject>()) }
-        val scope = rememberCoroutineScope()
+
         val snackbarHostState = remember { SnackbarHostState() }
         val snackbarScope = rememberCoroutineScope()
 
@@ -38,7 +38,8 @@ fun main() = application {
             Scaffold(
                 snackbarHost = { SnackbarHost(snackbarHostState) }
             ) {
-                when (state) {
+                val currentState = state
+                when (currentState) {
                     is State.SavedSessionCheck -> {
                         val sessFile = Path(".sess").toFile()
 
@@ -47,15 +48,16 @@ fun main() = application {
                         }
                         LaunchedEffect(Unit) {
                             if (sessFile.exists()) {
-                                SponsrSession(sessFile.readText())
                                 snackbarScope.launch {
                                     snackbarHostState.show("Проверка сохраненной сессии...")
                                 }
+                                val client = SponsrClient(SponsrSession(sessFile.readText()))
+                                state = currentState.toProjectsLoading(client)
                             } else {
                                 snackbarScope.launch {
                                     snackbarHostState.show("Сохраненной сессии не найдено. Авторизуйтесь.")
                                 }
-                                state = State.Auth()
+                                state = currentState.toAuth()
                             }
 
                         }
@@ -64,20 +66,46 @@ fun main() = application {
                     is State.Auth -> {
                         Login(
                             onLoggedIn = { sess ->
-                                scope.launch {
-                                    snackbarHostState.show("Получено значение SESS. Идет проверка...")
+                                snackbarScope.launch {
+                                    snackbarHostState.show("Получено значение SESS.")
                                 }
+                                val client = SponsrClient(SponsrSession(sess))
+                                state = currentState.toProjectsLoading(client)
                             }
                         )
                     }
 
-                    is State.ProjectSelecting -> {
-                        ProjectList(
-                            projects = projects,
-                            onProjectClick = { project ->
-                                println("Project clicked: ${project.title}")
+                    is State.ProjectsLoading -> {
+                        LaunchedEffect(Unit) {
+                            when (val result = currentState.client.projects()) {
+                                is SponsrResponse.Success -> {
+                                    state = currentState.toProjectSelecting(result.data)
+                                }
+
+                                is SponsrResponse.Unauthorized -> snackbarScope.launch {
+                                    snackbarHostState.show("Неавторизован")
+                                }
+
+                                is SponsrResponse.Unexpected -> snackbarScope.launch {
+                                    snackbarHostState.show("Неожиданная ошибка: ${result.message}")
+                                }
                             }
-                        )
+                        }
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    is State.ProjectSelecting -> {
+                        snackbarScope.launch {
+                            snackbarHostState.show("Выберите доступный вам проект.")
+                        }
+//                        ProjectList(
+//                            projects = projects,
+//                            onProjectClick = { project ->
+//                                println("Project clicked: ${project.title}")
+//                            }
+//                        )
                     }
 
                     is State.PostsLoading -> {
