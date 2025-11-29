@@ -32,6 +32,8 @@ kotlin {
             implementation("io.ktor:ktor-client-core:2.3.4")
             implementation("io.ktor:ktor-client-cio:2.3.4")
             implementation("io.ktor:ktor-client-logging:2.3.4")
+            implementation("io.ktor:ktor-client-encoding:2.3.4")
+            implementation("ch.qos.logback:logback-classic:1.5.21")
         }
     }
 }

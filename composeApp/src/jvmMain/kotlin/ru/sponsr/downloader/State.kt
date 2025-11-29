@@ -14,9 +14,9 @@ sealed class State {
     class ProjectsLoading(val client: SponsrClient): State(){
         fun toProjectSelecting(projects: List<SponsrProject>) = ProjectSelecting(client, projects)
     }
-    class ProjectSelecting(val client: SponsrClient, projects: List<SponsrProject>): State()
-    class PostsLoading(val client: SponsrClient, project: SponsrProject): State()
+    class ProjectSelecting(val client: SponsrClient, val projects: List<SponsrProject>): State()
+    class PostsLoading(val client: SponsrClient, val project: SponsrProject): State()
     class PostsSelecting(val client: SponsrClient): State()
-    class Downloading(val client: SponsrClient, posts: List<Int>): State()
+    class Downloading(val client: SponsrClient, val posts: List<Int>): State()
     class Downloaded(val client: SponsrClient): State()
 }

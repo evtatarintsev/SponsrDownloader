@@ -66,9 +66,6 @@ fun main() = application {
                     is State.Auth -> {
                         Login(
                             onLoggedIn = { sess ->
-                                snackbarScope.launch {
-                                    snackbarHostState.show("Получено значение SESS.")
-                                }
                                 val client = SponsrClient(SponsrSession(sess))
                                 state = currentState.toProjectsLoading(client)
                             }
@@ -97,15 +94,12 @@ fun main() = application {
                     }
 
                     is State.ProjectSelecting -> {
-                        snackbarScope.launch {
-                            snackbarHostState.show("Выберите доступный вам проект.")
-                        }
-//                        ProjectList(
-//                            projects = projects,
-//                            onProjectClick = { project ->
-//                                println("Project clicked: ${project.title}")
-//                            }
-//                        )
+                        ProjectList(
+                            projects = currentState.projects,
+                            onProjectClick = { project ->
+                                println("Project clicked: ${project.title}")
+                            }
+                        )
                     }
 
                     is State.PostsLoading -> {
