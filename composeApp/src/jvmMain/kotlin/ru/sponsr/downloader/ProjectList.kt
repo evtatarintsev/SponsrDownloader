@@ -21,7 +21,7 @@ fun ProjectList(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Text("No projects found")
+            Text("Нет доступных проектов")
         }
         return
     }

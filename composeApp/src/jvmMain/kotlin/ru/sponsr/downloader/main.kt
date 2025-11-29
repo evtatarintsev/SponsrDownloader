@@ -97,13 +97,34 @@ fun main() = application {
                         ProjectList(
                             projects = currentState.projects,
                             onProjectClick = { project ->
-                                println("Project clicked: ${project.title}")
+                                state = currentState.toPostsLoading(project)
                             }
                         )
                     }
 
                     is State.PostsLoading -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                        LaunchedEffect(Unit) {
+                            snackbarScope.launch {
+                                snackbarHostState.show("Загружаем материалы проекта.")
+                            }
+                            when (val result = currentState.client.posts(currentState.project)) {
+                                is SponsrResponse.Success -> {
+                                    state = currentState.toPostsSelecting(result.data)
+                                }
 
+                                is SponsrResponse.Unauthorized -> snackbarScope.launch {
+                                    snackbarHostState.show("Неавторизован")
+                                }
+
+                                is SponsrResponse.Unexpected -> snackbarScope.launch {
+                                    snackbarHostState.show("Неожиданная ошибка: ${result.message}")
+                                }
+                            }
+
+                        }
                     }
 
                     is State.PostsSelecting -> {

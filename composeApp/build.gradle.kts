@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    kotlin("plugin.serialization") version "2.2.0"
 }
 
 kotlin {
@@ -33,6 +34,8 @@ kotlin {
             implementation("io.ktor:ktor-client-cio:2.3.4")
             implementation("io.ktor:ktor-client-logging:2.3.4")
             implementation("io.ktor:ktor-client-encoding:2.3.4")
+            implementation("io.ktor:ktor-client-content-negotiation:2.3.4")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.4")
             implementation("ch.qos.logback:logback-classic:1.5.21")
         }
     }
