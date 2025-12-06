@@ -15,6 +15,6 @@ class SubscribePageTest {
         // Parse the HTML
         val subscribePage = SubscribePage(html)
         val projects = subscribePage.projects()
-        assertEquals(listOf(SponsrProject("Уроки истории", "https://sponsr.ru/uzhukoffa_lessons/")), projects)
+        assertEquals(listOf(SponsrProject(1, "Уроки истории", "https://sponsr.ru/uzhukoffa_lessons/")), projects)
     }
 }
